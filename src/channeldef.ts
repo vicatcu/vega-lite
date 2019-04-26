@@ -2,7 +2,7 @@
 import {isArray, isBoolean, isNumber, isString} from 'vega-util';
 import {Aggregate, isAggregateOp, isArgmaxDef, isArgminDef, isCountingAggregateOp} from './aggregate';
 import {Axis} from './axis';
-import {autoMaxBins, BinParams, binToString, isBinned, isBinning} from './bin';
+import {AnyBin, autoMaxBins, Binning, BinParams, binToString, isBinned, isBinning} from './bin';
 import {Channel, isScaleChannel, isSecondaryRangeChannel, POSITION_SCALE_CHANNELS, rangeType} from './channel';
 import {CompositeAggregate} from './compositemark';
 import {Config} from './config';
@@ -196,7 +196,7 @@ export function isRepeatRef(field: Field): field is RepeatRef {
 /** @hide */
 export type HiddenCompositeAggregate = CompositeAggregate;
 
-export interface GenericBinMixins<B> {
+export interface BinMixins<B extends AnyBin> {
   /**
    * A flag for binning a `quantitative` field, [an object defining binning parameters](https://vega.github.io/vega-lite/docs/bin.html#params), or indicating that the data for `x` or `y` channel are binned before they are imported into Vega-Lite (`"binned"`).
    *
@@ -209,10 +209,7 @@ export interface GenericBinMixins<B> {
   bin?: B;
 }
 
-export type BaseBinMixins = GenericBinMixins<boolean | BinParams | 'binned' | null>;
-export type BinWithoutBinnedMixins = GenericBinMixins<boolean | BinParams>;
-
-export interface FieldDefBase<F> extends BaseBinMixins {
+export interface FieldDefBase<F, B extends AnyBin = Binning> extends BinMixins<B> {
   /**
    * __Required.__ A string defining the name of the field from which to pull a data value
    * or an object defining iterated values from the [`repeat`](https://vega.github.io/vega-lite/docs/repeat.html) operator.
@@ -275,9 +272,12 @@ export interface TypeMixins<T extends Type> {
 /**
  *  Definition object for a data field, its type and transformation of an encoding channel.
  */
-export type TypedFieldDef<F extends Field, T extends Type = Type> = FieldDefBase<F> & TitleMixins & TypeMixins<T>;
+export type TypedFieldDef<F extends Field, T extends Type = Type, B extends AnyBin = AnyBin> = FieldDefBase<F, B> &
+  TitleMixins &
+  TypeMixins<T>;
 
-export interface SortableFieldDef<F extends Field, T extends Type = StandardType> extends TypedFieldDef<F, T> {
+export interface SortableFieldDef<F extends Field, T extends Type = StandardType, B extends AnyBin = Binning>
+  extends TypedFieldDef<F, T, B> {
   /**
    * Sort order for the encoded field.
    *
@@ -301,7 +301,8 @@ export function isSortableFieldDef<F extends Field>(fieldDef: FieldDef<F>): fiel
   return isTypedFieldDef(fieldDef) && !!fieldDef['sort'];
 }
 
-export interface ScaleFieldDef<F extends Field, T extends Type = StandardType> extends SortableFieldDef<F, T> {
+export interface ScaleFieldDef<F extends Field, T extends Type = StandardType, B extends AnyBin = AnyBin>
+  extends SortableFieldDef<F, T, B> {
   /**
    * An object defining properties of the channel's scale, which is the function that transforms values in the data domain (numbers, dates, strings, etc) to visual values (pixels, colors, sizes) of the encoding channels.
    *
@@ -315,18 +316,17 @@ export interface ScaleFieldDef<F extends Field, T extends Type = StandardType> e
 /**
  * A field definition of a secondary channel that shares a scale with another primary channel.  For example, `x2`, `xError` and `xError2` share the same scale with `x`.
  */
-export type SecondaryFieldDef<F extends Field> = FieldDefBase<F> & TitleMixins & GenericBinMixins<null>; // x2/y2 shouldn't have bin, but we keep bin property for simplicity of the codebase.
+export type SecondaryFieldDef<F extends Field> = FieldDefBase<F, null> & TitleMixins; // x2/y2 shouldn't have bin, but we keep bin property for simplicity of the codebase.
 
 /**
  * Field Def without scale (and without bin: "binned" support).
  */
-export type FieldDefWithoutScale<F extends Field, T extends Type = StandardType> = TypedFieldDef<F, T> &
-  BinWithoutBinnedMixins;
+export type FieldDefWithoutScale<F extends Field, T extends Type = StandardType> = TypedFieldDef<F, T>;
 
 export type LatLongFieldDef<F extends Field> = FieldDefBase<F> &
   TitleMixins &
   Partial<TypeMixins<'quantitative'>> &
-  GenericBinMixins<null>; // Lat long shouldn't have bin, but we keep bin property for simplicity of the codebase.
+  BinMixins<null>; // Lat long shouldn't have bin, but we keep bin property for simplicity of the codebase.
 
 export interface PositionFieldDef<F extends Field> extends ScaleFieldDef<F> {
   /**
@@ -366,16 +366,15 @@ export interface PositionFieldDef<F extends Field> extends ScaleFieldDef<F> {
 /**
  * Field definition of a mark property, which can contain a legend.
  */
-export type MarkPropFieldDef<F extends Field, T extends Type = Type> = ScaleFieldDef<F, T> &
-  BinWithoutBinnedMixins & {
-    /**
-     * An object defining properties of the legend.
-     * If `null`, the legend for the encoding channel will be removed.
-     *
-     * __Default value:__ If undefined, default [legend properties](https://vega.github.io/vega-lite/docs/legend.html) are applied.
-     */
-    legend?: Legend | null;
-  };
+export type MarkPropFieldDef<F extends Field, T extends Type = Type> = ScaleFieldDef<F, T, Binning> & {
+  /**
+   * An object defining properties of the legend.
+   * If `null`, the legend for the encoding channel will be removed.
+   *
+   * __Default value:__ If undefined, default [legend properties](https://vega.github.io/vega-lite/docs/legend.html) are applied.
+   */
+  legend?: Legend | null;
+};
 
 // Detail
 
