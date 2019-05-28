@@ -27,7 +27,6 @@
       "name": "data_0",
       "source": "source_0",
       "transform": [
-        {"type": "formula", "expr": "log(datum.x)/log(10)", "as": "log_x"},
         {
           "type": "extent",
           "field": "log_x",
@@ -41,6 +40,7 @@
           "maxbins": 10,
           "extent": {"signal": "bin_maxbins_10_log_x_extent"}
         },
+        {"type": "formula", "expr": "log(datum.x)/log(10)", "as": "log_x"},
         {"type": "formula", "expr": "pow(10, datum.bin_log_x)", "as": "x1"},
         {"type": "formula", "expr": "pow(10, datum.bin_log_x_end)", "as": "x2"},
         {
