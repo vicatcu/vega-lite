@@ -405,5 +405,5 @@ export class MergeBins extends BottomUpOptimizer {
  * and check whether or not the parent node is a pivot transform
  */
 export function nodeFieldIntersection(parent: DataFlowNode, child: DataFlowNode): boolean {
-  return parent instanceof PivotTransformNode || fieldIntersection(parent.producedFields(), child.producedFields());
+  return parent instanceof PivotTransformNode || fieldIntersection(parent.producedFields(), child.dependentFields());
 }
