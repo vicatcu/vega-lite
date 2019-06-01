@@ -1,4 +1,4 @@
-import {AggregateOp} from 'vega';
+import {AggregateOp, NonArgAggregateOp} from 'vega';
 import {isString, toSet} from 'vega-util';
 import {contains, Flag, flagKeys} from './util';
 
@@ -35,7 +35,7 @@ export interface ArgmaxDef {
   argmax: string;
 }
 
-export type Aggregate = AggregateOp | ArgmaxDef | ArgminDef;
+export type Aggregate = NonArgAggregateOp | ArgmaxDef | ArgminDef;
 
 export function isArgminDef(a: Aggregate | string): a is ArgminDef {
   return !!a && !!a['argmin'];
